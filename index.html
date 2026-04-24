@@ -332,8 +332,8 @@ function mkCar(color=0x050505,isPly=false){
   const ws=new THREE.Mesh(new THREE.BoxGeometry(1.44,0.56,0.04),glaM);ws.position.set(0,1.12,0.7);ws.rotation.x=-0.5;g.add(ws);
   const rw=new THREE.Mesh(new THREE.BoxGeometry(1.36,0.5,0.04),glaM);rw.position.set(0,1.14,-1.15);rw.rotation.x=0.55;g.add(rw);
   const sG=new THREE.BoxGeometry(0.04,0.36,1.55);
-  g.add(Object.assign(new THREE.Mesh(sG,glaM),{position:new THREE.Vector3(0.8,1.12,-0.25)}));
-  g.add(Object.assign(new THREE.Mesh(sG,glaM),{position:new THREE.Vector3(-0.8,1.12,-0.25)}));
+  const swL=new THREE.Mesh(sG,glaM);swL.position.set(0.8,1.12,-0.25);g.add(swL);
+  const swR=new THREE.Mesh(sG,glaM);swR.position.set(-0.8,1.12,-0.25);g.add(swR);
 
   // Rear fastback
   const rs=new THREE.Mesh(new THREE.BoxGeometry(1.78,0.3,1.45),paintMat);rs.position.set(0,0.93,-1.35);rs.rotation.x=-0.22;g.add(rs);
@@ -442,42 +442,102 @@ function mkCar(color=0x050505,isPly=false){
     const m=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.1,0.18),paintMat);m.position.set(x,1.02,0.56);g.add(m);
   });
 
-  // === COCKPIT INTERIOR (visible during intro) ===
-  // Dashboard
-  const dash=new THREE.Mesh(new THREE.BoxGeometry(1.45,0.22,0.42),new THREE.MeshStandardMaterial({color:0x0a0a0a,roughness:0.85}));
-  dash.position.set(0,0.84,0.58);g.add(dash);
-  const dashTop=new THREE.Mesh(new THREE.BoxGeometry(1.45,0.05,0.38),new THREE.MeshStandardMaterial({color:0x0d0d0d,roughness:0.9}));
-  dashTop.position.set(0,0.96,0.55);dashTop.rotation.x=-0.15;g.add(dashTop);
-  // Instrument cluster screen
-  const icl=new THREE.Mesh(new THREE.PlaneGeometry(0.35,0.12),new THREE.MeshStandardMaterial({color:0x0a1820,emissive:0x3a5565,emissiveIntensity:0.5}));
-  icl.position.set(-0.4,0.95,0.38);icl.rotation.x=-0.35;g.add(icl);
-  // Center screen
-  const scr=new THREE.Mesh(new THREE.PlaneGeometry(0.32,0.22),new THREE.MeshStandardMaterial({color:0x050510,emissive:0x1a2030,emissiveIntensity:0.4}));
-  scr.position.set(0.15,0.95,0.42);scr.rotation.x=-0.25;g.add(scr);
-  // Steering wheel
-  const swG=new THREE.Group();swG.position.set(-0.4,0.88,0.38);swG.rotation.x=-0.35;g.add(swG);
-  const swM=new THREE.MeshStandardMaterial({color:0x0e0e0e,roughness:0.8});
-  swG.add(new THREE.Mesh(new THREE.TorusGeometry(0.16,0.014,6,20),swM));
-  for(let i=0;i<3;i++){
-    const ag=i*(Math.PI*2/3)+Math.PI/2;
-    const sk=new THREE.Mesh(new THREE.BoxGeometry(0.025,0.14,0.02),swM);
-    sk.position.set(Math.cos(ag)*0.08,Math.sin(ag)*0.08,0);
-    sk.rotation.z=ag-Math.PI/2;swG.add(sk);
+  // === COCKPIT INTERIOR (GTS-Stil, sichtbar während Intro) ===
+  const dashDark=new THREE.MeshStandardMaterial({color:0x080808,roughness:0.88});
+  const dashMed=new THREE.MeshStandardMaterial({color:0x111111,roughness:0.82});
+  const screenMat=new THREE.MeshStandardMaterial({color:0x0a1525,emissive:0x1a3550,emissiveIntensity:0.5,roughness:0.3});
+  // Main dashboard
+  const dash=new THREE.Mesh(new THREE.BoxGeometry(1.5,0.2,0.42),dashDark);
+  dash.position.set(0,0.83,0.58);g.add(dash);
+  const dashTop=new THREE.Mesh(new THREE.BoxGeometry(1.5,0.06,0.42),dashMed);
+  dashTop.position.set(0,0.94,0.55);dashTop.rotation.x=-0.12;g.add(dashTop);
+  // Small round analogue clock on dash
+  const clkH=new THREE.Mesh(new THREE.CylinderGeometry(0.045,0.045,0.025,14),dashMed);
+  clkH.position.set(0,1.025,0.48);g.add(clkH);
+  const clkF=new THREE.Mesh(new THREE.CircleGeometry(0.036,18),new THREE.MeshStandardMaterial({color:0xf5f0e6,roughness:0.55}));
+  clkF.position.set(0,1.038,0.48);clkF.rotation.x=-Math.PI/2;g.add(clkF);
+  // Instrument cluster: three circular gauges behind wheel
+  const iclH=new THREE.Mesh(new THREE.BoxGeometry(0.45,0.19,0.04),dashDark);
+  iclH.position.set(-0.4,0.95,0.39);iclH.rotation.x=-0.35;g.add(iclH);
+  for(const o of [-0.15,0,0.15]){
+    const r=Math.abs(o)<0.01?0.075:0.055;
+    const gauge=new THREE.Mesh(new THREE.CircleGeometry(r,18),new THREE.MeshStandardMaterial({color:0x0a1218,emissive:0x2a4058,emissiveIntensity:0.55,roughness:0.3}));
+    gauge.position.set(-0.4+o,0.95,0.408);gauge.rotation.x=-0.35;g.add(gauge);
+    const needle=new THREE.Mesh(new THREE.BoxGeometry(r*0.75,0.004,0.003),new THREE.MeshStandardMaterial({color:0xff3020,emissive:0xcc1818,emissiveIntensity:0.7}));
+    needle.position.set(-0.4+o+r*0.28,0.95+r*0.18,0.412);needle.rotation.x=-0.35;needle.rotation.z=0.6;g.add(needle);
   }
-  swG.add(new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.03,10),new THREE.MeshStandardMaterial({color:0x222,roughness:0.5})));
-  // Seats
-  const stM=new THREE.MeshStandardMaterial({color:0x141414,roughness:0.9});
-  for(const xs of [-0.4,0.4]){
-    const bk=new THREE.Mesh(new THREE.BoxGeometry(0.45,0.72,0.12),stM);
-    bk.position.set(xs,1.0,-0.5);bk.rotation.x=0.12;g.add(bk);
-    const hr=new THREE.Mesh(new THREE.BoxGeometry(0.28,0.2,0.12),stM);
-    hr.position.set(xs,1.42,-0.52);g.add(hr);
-    const bt=new THREE.Mesh(new THREE.BoxGeometry(0.42,0.14,0.55),stM);
+  // Large central touchscreen with app grid
+  const scrBezel=new THREE.Mesh(new THREE.BoxGeometry(0.44,0.25,0.04),dashDark);
+  scrBezel.position.set(0.22,0.93,0.42);scrBezel.rotation.x=-0.2;g.add(scrBezel);
+  const scr=new THREE.Mesh(new THREE.PlaneGeometry(0.4,0.21),screenMat);
+  scr.position.set(0.22,0.93,0.443);scr.rotation.x=-0.2;g.add(scr);
+  const appCols=[0x3a7bc8,0xc83a3a,0x3ac87a,0xc8a03a,0x7a3ac8,0xc87a3a,0x6abcf0,0xe07ab0];
+  for(let i=0;i<8;i++){
+    const col=i%4,row=Math.floor(i/4);
+    const icn=new THREE.Mesh(new THREE.PlaneGeometry(0.055,0.055),new THREE.MeshStandardMaterial({color:appCols[i],emissive:appCols[i],emissiveIntensity:0.6,roughness:0.4}));
+    icn.position.set(0.22+(col-1.5)*0.085,0.93+(0.03-row*0.07),0.446);icn.rotation.x=-0.2;g.add(icn);
+  }
+  // Physical buttons below screen
+  for(let i=0;i<6;i++){
+    const btn=new THREE.Mesh(new THREE.BoxGeometry(0.032,0.018,0.022),dashMed);
+    btn.position.set(0.04+i*0.055,0.78,0.54);g.add(btn);
+  }
+  // Center console with gear selector
+  const cc=new THREE.Mesh(new THREE.BoxGeometry(0.26,0.35,1.1),dashDark);
+  cc.position.set(0,0.55,0);g.add(cc);
+  const gearK=new THREE.Mesh(new THREE.BoxGeometry(0.045,0.06,0.09),dashMed);
+  gearK.position.set(0,0.78,0.25);g.add(gearK);
+  // === Steering wheel (flat-bottom, 3 spokes, red 12 o'clock marker, red start button) ===
+  const swG=new THREE.Group();swG.position.set(-0.4,0.88,0.36);swG.rotation.x=-0.35;g.add(swG);
+  const swM=new THREE.MeshStandardMaterial({color:0x080808,roughness:0.75});
+  // Partial torus for top 279° arc
+  const rim=new THREE.Mesh(new THREE.TorusGeometry(0.155,0.017,8,22,Math.PI*1.55),swM);
+  rim.rotation.z=-Math.PI*0.275;swG.add(rim);
+  // Flat bottom bar
+  const flatBar=new THREE.Mesh(new THREE.BoxGeometry(0.195,0.033,0.035),swM);
+  flatBar.position.set(0,-0.142,0);swG.add(flatBar);
+  for(const sx of [-1,1]){
+    const cap=new THREE.Mesh(new THREE.CylinderGeometry(0.017,0.017,0.035,8),swM);
+    cap.rotation.x=Math.PI/2;cap.position.set(sx*0.0975,-0.142,0);swG.add(cap);
+  }
+  // Red 12 o'clock marker
+  const redMk=new THREE.Mesh(new THREE.BoxGeometry(0.025,0.02,0.025),new THREE.MeshStandardMaterial({color:0xcc2020,roughness:0.5}));
+  redMk.position.set(0,0.162,0.01);swG.add(redMk);
+  // Two upper V-spokes + bottom spoke
+  const leftSp=new THREE.Mesh(new THREE.BoxGeometry(0.025,0.12,0.03),swM);
+  leftSp.position.set(-0.065,-0.03,0);leftSp.rotation.z=0.55;swG.add(leftSp);
+  const rightSp=new THREE.Mesh(new THREE.BoxGeometry(0.025,0.12,0.03),swM);
+  rightSp.position.set(0.065,-0.03,0);rightSp.rotation.z=-0.55;swG.add(rightSp);
+  const btmSp=new THREE.Mesh(new THREE.BoxGeometry(0.028,0.095,0.03),swM);
+  btmSp.position.set(0,-0.09,0);swG.add(btmSp);
+  // Central hub
+  const hub=new THREE.Mesh(new THREE.CylinderGeometry(0.045,0.045,0.03,14),new THREE.MeshStandardMaterial({color:0x1a1a1a,roughness:0.5,metalness:0.4}));
+  hub.rotation.x=Math.PI/2;swG.add(hub);
+  // Red engine start button
+  const startBtn=new THREE.Mesh(new THREE.CylinderGeometry(0.013,0.013,0.018,10),new THREE.MeshStandardMaterial({color:0xdd1818,emissive:0x661010,emissiveIntensity:0.7,roughness:0.4}));
+  startBtn.rotation.x=Math.PI/2;startBtn.position.set(0.105,-0.06,0.028);swG.add(startBtn);
+  // Function buttons on spokes
+  for(const sx of [-0.095,0.095]){
+    for(const sy of [-0.045,-0.08]){
+      const b=new THREE.Mesh(new THREE.BoxGeometry(0.02,0.02,0.015),new THREE.MeshStandardMaterial({color:0x2a2a2a,roughness:0.6}));
+      b.position.set(sx,sy,0.022);swG.add(b);
+    }
+  }
+  // === Sport seats with side bolsters ===
+  const stM=new THREE.MeshStandardMaterial({color:0x121212,roughness:0.88});
+  for(const xs of [-0.42,0.42]){
+    const bk=new THREE.Mesh(new THREE.BoxGeometry(0.46,0.72,0.14),stM);
+    bk.position.set(xs,1.0,-0.52);bk.rotation.x=0.12;g.add(bk);
+    const hr=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.22,0.13),stM);
+    hr.position.set(xs,1.43,-0.54);g.add(hr);
+    const bt=new THREE.Mesh(new THREE.BoxGeometry(0.44,0.14,0.56),stM);
     bt.position.set(xs,0.62,-0.25);g.add(bt);
+    // Side bolsters on backrest
+    for(const bx of [-0.19,0.19]){
+      const bol=new THREE.Mesh(new THREE.BoxGeometry(0.07,0.68,0.16),stM);
+      bol.position.set(xs+bx,1.0,-0.5);bol.rotation.x=0.12;g.add(bol);
+    }
   }
-  // Center console
-  const cc=new THREE.Mesh(new THREE.BoxGeometry(0.22,0.28,0.95),new THREE.MeshStandardMaterial({color:0x0a0a0a,roughness:0.85}));
-  cc.position.set(0,0.6,0);g.add(cc);
 
   g.userData={whs};
   return g;
@@ -519,11 +579,7 @@ class Car {
     const pt=br*0.035-(th>0?0.008:0);
     this.mesh.rotation.z=THREE.MathUtils.lerp(this.mesh.rotation.z,rt,0.1);
     this.mesh.rotation.x=THREE.MathUtils.lerp(this.mesh.rotation.x,pt,0.1);
-    const wh=this.mesh.userData.whs;
-    if(wh){
-      const sp=(this.speed*dt)/0.42;
-      wh.forEach(w=>w.children.forEach(c=>c.rotation.x?null:c.rotation.y?c.rotation.y-=sp:0));
-    }
+    // wheel spin weggelassen für Stabilität
   }
 }
 class AICar {
